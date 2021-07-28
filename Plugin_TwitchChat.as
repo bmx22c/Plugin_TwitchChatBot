@@ -93,7 +93,7 @@ class ChatCallbacks : Twitch::ICallbacks
 {
 	void HandleCommand(string prefix, ChatMessage@ msg)
 	{
-		if (msg.m_text == prefix+Setting_ChatCommandMap && Setting_MapCommand) {
+		if (Setting_ChatCommandMap != "" && msg.m_text == prefix+Setting_ChatCommandMap && Setting_MapCommand) {
 			auto currentMap = GetCurrentMap();
 			if (currentMap !is null) {
 				string tmp = Setting_StringCurrentMap;
@@ -108,7 +108,7 @@ class ChatCallbacks : Twitch::ICallbacks
 				// Twitch::SendMessage("❌ Je ne joue actuellement sur aucune map.");
 			}
 
-		} else if (msg.m_text == prefix+Setting_ChatCommandServer && Setting_ServerCommand) {
+		} else if (Setting_ChatCommandServer != "" && msg.m_text == prefix+Setting_ChatCommandServer && Setting_ServerCommand) {
 			auto serverInfo = cast<CGameCtnNetServerInfo>(g_app.Network.ServerInfo);
 			if (serverInfo.ServerLogin != "") {
 				int numPlayers = g_app.ChatManagerScript.CurrentServerPlayerCount - 1;
@@ -127,7 +127,7 @@ class ChatCallbacks : Twitch::ICallbacks
 				// Twitch::SendMessage("❌ Je ne joue actuellement sur aucun serveur.");
 			}
 
-		} else if (msg.m_text == prefix+Setting_ChatCommandPersonnalBest && Setting_PbCommand) {
+		} else if (Setting_ChatCommandPersonnalBest != "" && msg.m_text == prefix+Setting_ChatCommandPersonnalBest && Setting_PbCommand) {
 			auto currentMap = GetCurrentMap();
 			if (currentMap !is null) {
 				auto network = cast<CTrackManiaNetwork>(@g_app.Network);
@@ -159,7 +159,7 @@ class ChatCallbacks : Twitch::ICallbacks
 				Twitch::SendMessage(tmp);
 				// Twitch::SendMessage("❌ Je ne joue actuellement sur aucune map.");
 			}
-		}  else if (msg.m_text == prefix+Setting_ChatCommandURL && Setting_LinkCommand) {
+		}  else if (Setting_ChatCommandURL != "" && msg.m_text == prefix+Setting_ChatCommandURL && Setting_LinkCommand) {
 			auto currentMap = GetCurrentMap();
 			if (currentMap !is null) {
 				string UIDMap = currentMap.MapInfo.MapUid;
