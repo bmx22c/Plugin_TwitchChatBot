@@ -1,4 +1,4 @@
-# StreamUpdate
+# Twitch Chat Bot
 
 Twitch Chat Bot in an OpenPlanet plugin for Trackmania 2020 that answer to commands. It can display the map you're playing, the serveur you're on, your personnal best time, a link to the map you're playing and a few more configurable fields.
 
