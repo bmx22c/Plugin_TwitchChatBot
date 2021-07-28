@@ -2,18 +2,11 @@
 #author "bmx22c"
 #category "Streaming"
 
-#include "TwitchChat.as"
 #include "Time.as"
 #include "Formatting.as"
-
-[Setting category="Parameters" name="Twitch OAuth Token" password]
-string Setting_TwitchToken;
-
-[Setting category="Parameters" name="Twitch Nickname" description="Lowercase."]
-string Setting_TwitchNickname;
-
-[Setting category="Parameters" name="Twitch Channel" description="Lowercase and including the # sign, for example: #missterious"]
-string Setting_TwitchChannel;
+#include "../Twitch/Structures.as"
+#include "../Twitch/Functions.as"
+int g_pluginId;
 
 [Setting category="Commands" name="Enable map command"]
 bool Setting_MapCommand;
@@ -66,20 +59,6 @@ string Setting_StringNoCurrentPersonnalBest;
 string mapId = "";
 
 CTrackMania@ g_app;
-
-class ChatMessage
-{
-	string m_username;
-	string m_text;
-}
-
-string Replace(string search, string replace, string subject)
-{
-	return Regex::Replace(subject, search, replace);
-}
-
-array<ChatMessage@> g_chatMessages;
-
 CGameCtnChallenge@ GetCurrentMap()
 {
 #if MP41 || TMNEXT
@@ -89,151 +68,103 @@ CGameCtnChallenge@ GetCurrentMap()
 #endif
 }
 
-class ChatCallbacks : Twitch::ICallbacks
-{
-	void HandleCommand(string prefix, ChatMessage@ msg)
-	{
-		if (Setting_ChatCommandMap != "" && msg.m_text == prefix+Setting_ChatCommandMap && Setting_MapCommand) {
-			auto currentMap = GetCurrentMap();
-			if (currentMap !is null) {
-				string tmp = Setting_StringCurrentMap;
-				tmp = Replace("\\{map\\}", StripFormatCodes(currentMap.MapName), tmp);
-				tmp = Replace("\\{author\\}", StripFormatCodes(currentMap.AuthorNickName), tmp);
+void Main() {
+	@g_app = cast<CTrackMania>(GetApp());
 
-				Twitch::SendMessage(tmp);
-				// Twitch::SendMessage("⏩ Map actuelle: " + StripFormatCodes(currentMap.MapName) + " par " + StripFormatCodes(currentMap.AuthorNickName));
-			} else {
-				string tmp = Setting_StringNoCurrentMap;
-				Twitch::SendMessage(tmp);
-				// Twitch::SendMessage("❌ Je ne joue actuellement sur aucune map.");
-			}
-
-		} else if (Setting_ChatCommandServer != "" && msg.m_text == prefix+Setting_ChatCommandServer && Setting_ServerCommand) {
-			auto serverInfo = cast<CGameCtnNetServerInfo>(g_app.Network.ServerInfo);
-			if (serverInfo.ServerLogin != "") {
-				int numPlayers = g_app.ChatManagerScript.CurrentServerPlayerCount - 1;
-				int maxPlayers = g_app.ChatManagerScript.CurrentServerPlayerCountMax;
-
-				string tmp = Setting_StringCurrentServer;
-				tmp = Replace("\\{name\\}", StripFormatCodes(serverInfo.ServerName), tmp);
-				tmp = Replace("\\{nbr_player\\}", "" + (numPlayers - 1), tmp);
-				tmp = Replace("\\{max_player\\}", "" + maxPlayers, tmp);
-
-				Twitch::SendMessage(tmp);
-				// Twitch::SendMessage("⏩ Serveur actuel: \"" + StripFormatCodes(serverInfo.ServerName) + "\" (" + (numPlayers - 1) + " / " + maxPlayers + ")");
-			} else {
-				string tmp = Setting_StringNoCurrentServer;
-				Twitch::SendMessage(tmp);
-				// Twitch::SendMessage("❌ Je ne joue actuellement sur aucun serveur.");
-			}
-
-		} else if (Setting_ChatCommandPersonnalBest != "" && msg.m_text == prefix+Setting_ChatCommandPersonnalBest && Setting_PbCommand) {
-			auto currentMap = GetCurrentMap();
-			if (currentMap !is null) {
-				auto network = cast<CTrackManiaNetwork>(@g_app.Network);
-				auto userInfo = cast<CTrackManiaPlayerInfo>(network.PlayerInfo);
-				auto userId = userInfo.Id;
-				string UIDMap = currentMap.MapInfo.MapUid;
-
-				// print("" + userId);
-				print("" + UIDMap);
-				
-				// auto temps = g_app.PlaygroundScript.ScoreMgr.Map_GetRecord_v2(userId, UIDMap, "PersonalBest", "", "TimeAttack", "");
-				auto temps = cast<CTrackManiaMenus@>(g_app.MenuManager).MenuCustom_CurrentManiaApp.ScoreMgr.Map_GetRecord_v2(userId, UIDMap, "PersonalBest", "", "TimeAttack", "");
-				print("" + Time::Format(temps));
-				print("" + temps);
-				if(temps != 4294967295 && temps != 0){
-					string tmp = Setting_StringCurrentPersonnalBest;
-					tmp = Replace("\\{pb\\}", StripFormatCodes(Time::Format(temps)), tmp);
-
-					Twitch::SendMessage(tmp);
-					// Twitch::SendMessage("⏩ Meilleur temps actuel: " + StripFormatCodes(Time::Format(temps)));
-				} else {
-					string tmp = Setting_StringNoCurrentPersonnalBest;
-					Twitch::SendMessage(tmp);
-					// Twitch::SendMessage("❌ Je n'ai pas encore fait de temps.");
+	while (!Twitch_ChannelsJoined()) yield();
+	while (true) {
+		if (g_pluginId == 0) g_pluginId = Twitch_Register(TwitchMessageType::ChatMessage);
+		array<TwitchMessage@> newMessages = Twitch_Fetch(g_pluginId);
+		for (uint i = 0; i < newMessages.Length; i++) {
+			if(Setting_ChatCommandPrefix != ""){
+				if (newMessages[i].m_text.StartsWith(Setting_ChatCommandPrefix)) {
+					HandleCommand(Setting_ChatCommandPrefix, newMessages[i].m_text);
 				}
-			} else {
-				string tmp = Setting_StringNoCurrentMap;
-
-				Twitch::SendMessage(tmp);
-				// Twitch::SendMessage("❌ Je ne joue actuellement sur aucune map.");
 			}
-		}  else if (Setting_ChatCommandURL != "" && msg.m_text == prefix+Setting_ChatCommandURL && Setting_LinkCommand) {
-			auto currentMap = GetCurrentMap();
-			if (currentMap !is null) {
-				string UIDMap = currentMap.MapInfo.MapUid;
-
-				string tmp = Setting_StringCurrentURL;
-				tmp = Replace("\\{url\\}", "https://trackmania.io/#/leaderboard/"+UIDMap, tmp);
-
-				Twitch::SendMessage(tmp);
-				// Twitch::SendMessage("⏩ Lien de la map: https://trackmania.io/#/leaderboard/"+UIDMap);
-			} else {
-				string tmp = Setting_StringNoCurrentMap;
-
-				Twitch::SendMessage(tmp);
-				// Twitch::SendMessage("❌ Je ne joue actuellement sur aucune map.");
-			}
-		} 
-	}
-
-	void OnMessage(IRC::Message@ msg)
-	{
-		auto newMessage = ChatMessage();
-
-		newMessage.m_text = msg.m_params[1];
-
-		newMessage.m_username = msg.m_prefix.m_origin;
-
-		if(Setting_ChatCommandPrefix != ""){
-			if (newMessage.m_text.StartsWith(Setting_ChatCommandPrefix)) {
-				HandleCommand(Setting_ChatCommandPrefix, newMessage);
-			}
-			// if (newMessage.m_text.StartsWith("!")) {
-			// 	HandleCommand(newMessage);
-			// }
+			print(newMessages[i].m_username + " said: " + newMessages[i].m_text);
 		}
-
-		print("Twitch chat: " + newMessage.m_username + ": " + newMessage.m_text);
+		yield();
 	}
 }
 
-ChatCallbacks@ g_chatCallbacks;
-
-void Main()
+void HandleCommand(string prefix, string message)
 {
-	@g_app = cast<CTrackMania>(GetApp());
-	
-	if (Setting_TwitchToken == "") {
-		print("No Twitch token set. Set one in the settings and reload scripts!");
-		return;
-	}
+	if (Setting_ChatCommandMap != "" && message == prefix+Setting_ChatCommandMap && Setting_MapCommand) {
+		auto currentMap = GetCurrentMap();
+		if (currentMap !is null) {
+			string tmp = Setting_StringCurrentMap;
+			tmp = Replace("\\{map\\}", StripFormatCodes(currentMap.MapName), tmp);
+			tmp = Replace("\\{author\\}", StripFormatCodes(currentMap.AuthorNickName), tmp);
 
-	if (Setting_TwitchNickname == "") {
-		print("No Twitch nickname set. Set one in the settings and reload scripts!");
-		return;
-	}
+			Twitch_SendMessage('bmx22c', tmp);
+		} else {
+			string tmp = Setting_StringNoCurrentMap;
+			Twitch_SendMessage('bmx22c', tmp);
+		}
 
-	if (Setting_TwitchChannel == "") {
-		print("No Twitch channel set. Set one in the settings and reload scripts!");
-		return;
-	}
+	} else if (Setting_ChatCommandServer != "" && message == prefix+Setting_ChatCommandServer && Setting_ServerCommand) {
+		auto serverInfo = cast<CGameCtnNetServerInfo>(g_app.Network.ServerInfo);
+		if (serverInfo.ServerLogin != "") {
+			int numPlayers = g_app.ChatManagerScript.CurrentServerPlayerCount - 1;
+			int maxPlayers = g_app.ChatManagerScript.CurrentServerPlayerCountMax;
 
-	@g_chatCallbacks = ChatCallbacks();
+			string tmp = Setting_StringCurrentServer;
+			tmp = Replace("\\{name\\}", StripFormatCodes(serverInfo.ServerName), tmp);
+			tmp = Replace("\\{nbr_player\\}", "" + (numPlayers - 1), tmp);
+			tmp = Replace("\\{max_player\\}", "" + maxPlayers, tmp);
 
-	print("Connecting to Twitch chat...");
+			Twitch_SendMessage('bmx22c', tmp);
+		} else {
+			string tmp = Setting_StringNoCurrentServer;
+			Twitch_SendMessage('bmx22c', tmp);
+		}
 
-	if (!Twitch::Connect(g_chatCallbacks)) {
-		return;
-	}
+	} else if (Setting_ChatCommandPersonnalBest != "" && message == prefix+Setting_ChatCommandPersonnalBest && Setting_PbCommand) {
+		auto currentMap = GetCurrentMap();
+		if (currentMap !is null) {
+			auto network = cast<CTrackManiaNetwork>(@g_app.Network);
+			auto userInfo = cast<CTrackManiaPlayerInfo>(network.PlayerInfo);
+			auto userId = userInfo.Id;
+			string UIDMap = currentMap.MapInfo.MapUid;
 
-	print("Connected to Twitch chat!");
+			print("" + UIDMap);
+			
+			auto temps = cast<CTrackManiaMenus@>(g_app.MenuManager).MenuCustom_CurrentManiaApp.ScoreMgr.Map_GetRecord_v2(userId, UIDMap, "PersonalBest", "", "TimeAttack", "");
+			print("" + Time::Format(temps));
+			print("" + temps);
+			if(temps != 4294967295 && temps != 0){
+				string tmp = Setting_StringCurrentPersonnalBest;
+				tmp = Replace("\\{pb\\}", StripFormatCodes(Time::Format(temps)), tmp);
 
-	Twitch::Login(Setting_TwitchToken, Setting_TwitchNickname, Setting_TwitchChannel);
+				Twitch_SendMessage('bmx22c', tmp);
+			} else {
+				string tmp = Setting_StringNoCurrentPersonnalBest;
+				Twitch_SendMessage('bmx22c', tmp);
+			}
+		} else {
+			string tmp = Setting_StringNoCurrentMap;
 
-	while (true) {
-		Twitch::Update();
-		yield();
-	}
+			Twitch_SendMessage('bmx22c', tmp);
+		}
+	}  else if (Setting_ChatCommandURL != "" && message == prefix+Setting_ChatCommandURL && Setting_LinkCommand) {
+		auto currentMap = GetCurrentMap();
+		if (currentMap !is null) {
+			string UIDMap = currentMap.MapInfo.MapUid;
+
+			string tmp = Setting_StringCurrentURL;
+			tmp = Replace("\\{url\\}", "https://trackmania.io/#/leaderboard/"+UIDMap, tmp);
+
+			Twitch_SendMessage('bmx22c', tmp);
+		} else {
+			string tmp = Setting_StringNoCurrentMap;
+
+			Twitch_SendMessage('bmx22c', tmp);
+		}
+	} 
+}
+
+
+string Replace(string search, string replace, string subject)
+{
+	return Regex::Replace(subject, search, replace);
 }
