@@ -11,12 +11,37 @@ Put the files in your OpenPlanet directory which is located under:
 C:\Users\<username>\OpenplanetNext\Scripts\TwitchChat
 ```
 
+So that it looks like this:
+```
+Scripts/
+├─ TwitchChat/
+│  ├─ Plugin_TwitchChat.as
+```
+
+## Dependency
+You will need Nsgr's Twitch Base library. You need to download it [here](https://openplanet.nl/files/93).
+Place it at the root of your `Scripts` folder:
+```
+C:\Users\<username>\OpenplanetNext\Scripts\
+```
+
+So that it looks like this:
+```
+Scripts/
+├─ Twitch/
+│  ├─ [...].as
+│  ├─ [...].as.sig
+├─ Plugin_TwitchBase.as
+```
+
 ## Settings
 ### Parameters
-You'll need to update the plugin settings tab under the `Twitch Chat Bot` then `Parameters` tab with some informations:
+You'll need to update the plugin settings tab under the `Twitch Base` with some informations:
 - `Twitch OAuth Token` that you can get from [here](https://twitchapps.com/tmi/).
 - `Twitch Nickname` is the Twitch nickname from the channel you'll be streaming on.
 - `Twitch Channel` which is, as the name suggests, your Twitch channel, preceded by `#`.
+
+**⚠ All other settings will be under the `Twitch Chat Bot` tab. ⚠**
 
 ### Commands
 - You can enable or disable specific commands. (⚠ _please note that some characters will not work because they are locked by Twitch, such as `/`, `//`, `@` or `.`_)
