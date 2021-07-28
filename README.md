@@ -11,10 +11,6 @@ Put the files in your OpenPlanet directory which is located under:
 C:\Users\<username>\OpenplanetNext\Scripts\TwitchChat
 ```
 
-You will also need a Twitch OAuth token for the chat which you can get from [here](https://twitchapps.com/tmi/).
-
-Note: When you are creating your application, please put `https://localhost` in the `OAuth redirect URL` field.
-
 ## Settings
 ### Parameters
 You'll need to update the plugin settings tab under the `Twitch Chat Bot` then `Parameters` tab with some informations:
