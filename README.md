@@ -14,7 +14,7 @@ C:\Users\<username>\OpenplanetNext\Scripts\TwitchChat
 ## Settings
 ### Parameters
 You'll need to update the plugin settings tab under the `Twitch Chat Bot` then `Parameters` tab with some informations:
-- `Twitch Oauth Token` that you can get from [here](https://twitchapps.com/tmi/).
+- `Twitch OAuth Token` that you can get from [here](https://twitchapps.com/tmi/).
 - `Twitch Nickname` is the Twitch nickname from the channel you'll be streaming on.
 - `Twitch Channel` which is, as the name suggests, your Twitch channel, preceded by `#`.
 
